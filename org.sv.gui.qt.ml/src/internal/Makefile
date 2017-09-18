@@ -49,43 +49,43 @@ ifeq ($(SV_USE_OPENCASCADE_QT_GUI),1)
 endif
 
 HDRS	= \
-    svLoftingUtils.h \
-    svContourGroupCreate.h \
-    svContourGroupCreateAction.h \
-    svSegmentationLegacyLoadAction.h \
-    svSegmentationLegacySaveAction.h \
-    svSegmentationLoadAction.h \
-    svLevelSet2DWidget.h \
-    svLoftParamWidget.h \
-    svSeg2DEdit.h \
-    svContourGroupPoint2DSizeAction.h \
-    svContourGroupPoint3DSizeAction.h \
-    svSeg3DCreateAction.h \
-    svSeg3DEdit.h \
-    svSegmentationPluginActivator.h
+    svMLLoftingUtils.h \
+    svMLContourGroupCreate.h \
+    svMLContourGroupCreateAction.h \
+    svMLSegmentationLegacyLoadAction.h \
+    svMLSegmentationLegacySaveAction.h \
+    svMLSegmentationLoadAction.h \
+    svMLLevelSet2DWidget.h \
+    svMLLoftParamWidget.h \
+    svMLSeg2DEdit.h \
+    svMLContourGroupPoint2DSizeAction.h \
+    svMLContourGroupPoint3DSizeAction.h \
+    svMLSeg3DCreateAction.h \
+    svMLSeg3DEdit.h \
+    svMLSegmentationPluginActivator.h
 
 CXXSRCS	= \
-    svLoftingUtils.cxx \
-    svContourGroupCreate.cxx \
-    svContourGroupCreateAction.cxx \
-    svSegmentationLegacyLoadAction.cxx \
-    svSegmentationLegacySaveAction.cxx \
-    svSegmentationLoadAction.cxx \
-    svLevelSet2DWidget.cxx \
-    svLoftParamWidget.cxx \
-    svSeg2DEdit.cxx \
-    svContourGroupPoint2DSizeAction.cxx \
-    svContourGroupPoint3DSizeAction.cxx \
-    svSeg3DCreateAction.cxx \
-    svSeg3DEdit.cxx \
-    svSegmentationPluginActivator.cxx
+    svMLLoftingUtils.cxx \
+    svMLContourGroupCreate.cxx \
+    svMLContourGroupCreateAction.cxx \
+    svMLSegmentationLegacyLoadAction.cxx \
+    svMLSegmentationLegacySaveAction.cxx \
+    svMLSegmentationLoadAction.cxx \
+    svMLLevelSet2DWidget.cxx \
+    svMLLoftParamWidget.cxx \
+    svMLSeg2DEdit.cxx \
+    svMLContourGroupPoint2DSizeAction.cxx \
+    svMLContourGroupPoint3DSizeAction.cxx \
+    svMLSeg3DCreateAction.cxx \
+    svMLSeg3DEdit.cxx \
+    svMLSegmentationPluginActivator.cxx
 
 UIFILES = \
-    svContourGroupCreate.ui \
-    svLevelSet2DWidget.ui \
-    svLoftParamWidget.ui \
-    svSeg2DEdit.ui \
-    svSeg3DEdit.ui
+    svMLContourGroupCreate.ui \
+    svMLLevelSet2DWidget.ui \
+    svMLLoftParamWidget.ui \
+    svMLSeg2DEdit.ui \
+    svMLSeg3DEdit.ui
 
 QRCFILES = org_sv_gui_qt_segmentation_manifest.qrc \
            org_sv_gui_qt_segmentation_cached.qrc
