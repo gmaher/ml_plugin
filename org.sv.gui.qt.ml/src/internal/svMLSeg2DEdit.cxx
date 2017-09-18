@@ -37,7 +37,7 @@ using namespace std;
 
 #include <math.h>
 
-const QString svMLSeg2DEdit::EXTENSION_ID = "org.sv.views.segmentation2d";
+const QString svMLSeg2DEdit::EXTENSION_ID = "org.sv.views.ml";
 
 svMLSeg2DEdit::svMLSeg2DEdit() :
     ui(new Ui::svMLSeg2DEdit)
