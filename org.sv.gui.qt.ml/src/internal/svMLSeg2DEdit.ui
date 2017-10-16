@@ -585,6 +585,13 @@ If &quot;Preset&quot; on,  a contour is created with a specified threshold value
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="NNPushButton">
+           <property name="text">
+            <string>2D CNN</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="label_2">
            <property name="text">
             <string/>
@@ -764,6 +771,7 @@ Then, press key Delete to remove the shown contour.</string>
         <zorder>label_3</zorder>
         <zorder>label_4</zorder>
         <zorder>label_5</zorder>
+        <zorder>NNPushButton</zorder>
        </widget>
       </item>
      </layout>

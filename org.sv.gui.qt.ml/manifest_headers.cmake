@@ -1,4 +1,4 @@
-set(Plugin-Name "SimVascular Segmentation")
+set(Plugin-Name "SimVascular ML")
 set(Plugin-Version "1.0")
 set(Plugin-Vendor "Stanford Medicine")
 set(Plugin-ContactAddress "http://www.simvascular.org")

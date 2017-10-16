@@ -16,6 +16,7 @@
 #include "svContourOperation.h"
 #include "svContourModel.h"
 #include "svContourModelThresholdInteractor.h"
+#include "svMLNN2D.h"
 
 #include "svModelUtils.h"
 
@@ -87,6 +88,7 @@ svMLSeg2DEdit::~svMLSeg2DEdit()
 
 void svMLSeg2DEdit::CreateQtPartControl( QWidget *parent )
 {
+
     m_Parent=parent;
     ui->setupUi(parent);
 
@@ -129,6 +131,7 @@ void svMLSeg2DEdit::CreateQtPartControl( QWidget *parent )
 
     connect(ui->checkBoxShowPath, SIGNAL(clicked(bool)), this, SLOT(ShowPath(bool)) );
 
+    connect(ui->NNPushButton, SIGNAL(clicked()), this, SLOT(CreateNNContour()) );
     connect(ui->btnLevelSet, SIGNAL(clicked()), this, SLOT(CreateLSContour()) );
     connect(ui->btnThreshold, SIGNAL(clicked()), this, SLOT(CreateThresholdContour()) );
     connect(ui->btnCircle, SIGNAL(clicked()), this, SLOT(CreateCircle()) );
@@ -768,6 +771,84 @@ void svMLSeg2DEdit::ResetGUI()
         m_ContourGroup->RemoveInvalidContours(GetTimeStep());
 
     m_ContourChanging=false;
+}
+
+void svMLSeg2DEdit::CreateNNContour()
+{
+  svMLNN2D nn;
+  nn.segment(GetDataStorage());
+
+  if(m_cvImage==NULL)
+      return;
+
+  bool usingBatch;
+  std::vector<int> posList;
+  if(ui->checkBoxBatch->isChecked())
+  {
+      usingBatch=true;
+      posList=GetBatchList();
+
+      if(posList.size()>50)
+      {
+          QString msg = "There will be "+ QString::number(posList.size()) + " segmentations to do. Are you sure?";
+          if (QMessageBox::question(NULL, "Warning", msg,
+                                    QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes)
+          {
+            return;
+          }
+      }
+
+  }
+  else
+  {
+      usingBatch=false;
+      posList.push_back(ui->resliceSlider->getCurrentSliceIndex());
+  }
+
+  if(posList.size()>0)
+      mitk::OperationEvent::IncCurrObjectEventId();
+
+  mitk::ProgressBar::GetInstance()->AddStepsToDo(posList.size());
+
+  //write all contours to folder
+  for(int i=0;i<posList.size();i++)
+  {
+    int posID=posList[i];
+    std::cout << "writing " << posID << "\n";
+
+    nn.writeResliceImage(ui->resliceSlider->getPathPoint(posID),m_cvImage->GetVtkStructuredPoints(),posID);
+  }
+
+  // for(int i=0;i<posList.size();i++)
+  // {
+  //     int posID=posList[i];
+  //
+  //     svContour* contour=NULL;
+  //
+  //     contour=svSegmentationUtils::CreateThresholdContour(ui->resliceSlider->getPathPoint(posID),m_cvImage->GetVtkStructuredPoints(),ui->sliderThreshold->value(), ui->resliceSlider->getResliceSize());
+  //
+  //
+  //     if(contour && contour->GetContourPointNumber()>2)
+  //     {
+  //         contour=PostprocessContour(contour);
+  //
+  //         InsertContourByPathPosPoint(contour);
+  //
+  //         LoftContourGroup();
+  //
+  //         mitk::StatusBar::GetInstance()->DisplayText("contour added");
+  //     }
+  //     else
+  //     {
+  //         if(contour)
+  //             delete contour;
+  //
+  //         if(posList.size()==1)
+  //             QMessageBox::warning(NULL,"No Valid Contour Created","Contour not created and added since it's invalid");
+  //     }
+  //
+  //     mitk::ProgressBar::GetInstance()->Progress(1);
+  // }
 }
 
 void svMLSeg2DEdit::CreateLSContour()

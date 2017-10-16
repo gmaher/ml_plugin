@@ -46,7 +46,7 @@ class svMLSeg2DEdit : public QmitkFunctionality
 
 public:
 
-    enum SegmentationMethod {LEVELSET_METHOD, THRESHOLD_METHOD, REGION_GROWING_METHOD};
+    enum SegmentationMethod {LEVELSET_METHOD, THRESHOLD_METHOD, REGION_GROWING_METHOD, NN2D_METHOD};
 
     static const QString EXTENSION_ID;
 
@@ -55,6 +55,8 @@ public:
     virtual ~svMLSeg2DEdit();
 
 public slots:
+
+    void CreateNNContour();
 
     void CreateLSContour();
 

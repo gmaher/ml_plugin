@@ -20,6 +20,7 @@ set(INTERNAL_CPP_FILES
 )
 
 set(MOC_H_FILES
+    src/internal/svMLNN2D.h
     src/internal/svMLLoftingUtils.h
     src/internal/svMLContourGroupCreate.h
     src/internal/svMLContourGroupCreateAction.h
@@ -48,6 +49,7 @@ set(CACHED_RESOURCE_FILES
   plugin.xml
   resources/contourgroup.png
   resources/svseg3d.png
+  resources/ml.png
 )
 
 set(QRC_FILES
@@ -63,4 +65,3 @@ endforeach(file ${SRC_CPP_FILES})
 foreach(file ${INTERNAL_CPP_FILES})
   set(CPP_FILES ${CPP_FILES} src/internal/${file})
 endforeach(file ${INTERNAL_CPP_FILES})
-

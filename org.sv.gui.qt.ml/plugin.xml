@@ -3,13 +3,13 @@
 
   <extension point="org.blueberry.ui.views">
     <view id="org.sv.views.ml"
-          name="SV 2D Segmentation"
+          name="SV 2D ML"
           class="svMLSeg2DEdit"
-          icon="resources/contourgroup.png" />
+          icon="resources/ml.png" />
     <view id="org.sv.views.segmentation3d"
-          name="SV 3D Segmentation"
+          name="SV 3D ML"
           class="svMLSeg3DEdit"
-          icon="resources/svseg3d.png" />
+          icon="resources/ml.png" />
 
   </extension>
 
