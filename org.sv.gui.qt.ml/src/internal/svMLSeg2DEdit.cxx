@@ -819,36 +819,37 @@ void svMLSeg2DEdit::CreateNNContour()
     nn.writeResliceImage(ui->resliceSlider->getPathPoint(posID),m_cvImage->GetVtkStructuredPoints(),posID);
   }
 
-  // for(int i=0;i<posList.size();i++)
-  // {
-  //     int posID=posList[i];
-  //
-  //     svContour* contour=NULL;
-  //
-  //     contour=svSegmentationUtils::CreateThresholdContour(ui->resliceSlider->getPathPoint(posID),m_cvImage->GetVtkStructuredPoints(),ui->sliderThreshold->value(), ui->resliceSlider->getResliceSize());
-  //
-  //
-  //     if(contour && contour->GetContourPointNumber()>2)
-  //     {
-  //         contour=PostprocessContour(contour);
-  //
-  //         InsertContourByPathPosPoint(contour);
-  //
-  //         LoftContourGroup();
-  //
-  //         mitk::StatusBar::GetInstance()->DisplayText("contour added");
-  //     }
-  //     else
-  //     {
-  //         if(contour)
-  //             delete contour;
-  //
-  //         if(posList.size()==1)
-  //             QMessageBox::warning(NULL,"No Valid Contour Created","Contour not created and added since it's invalid");
-  //     }
-  //
-  //     mitk::ProgressBar::GetInstance()->Progress(1);
-  // }
+  for(int i=0;i<posList.size();i++)
+  {
+      int posID=posList[i];
+      std::cout << "getting" << posID << "\n";
+
+      svContour* contour=NULL;
+
+      contour=nn.getContour(ui->resliceSlider->getPathPoint(posID),posID);
+
+
+      if(contour && contour->GetContourPointNumber()>2)
+      {
+          contour=PostprocessContour(contour);
+
+          InsertContourByPathPosPoint(contour);
+
+          LoftContourGroup();
+
+          mitk::StatusBar::GetInstance()->DisplayText("contour added");
+      }
+      else
+      {
+          if(contour)
+              delete contour;
+
+          if(posList.size()==1)
+              QMessageBox::warning(NULL,"No Valid Contour Created","Contour not created and added since it's invalid");
+      }
+
+      mitk::ProgressBar::GetInstance()->Progress(1);
+  }
 }
 
 void svMLSeg2DEdit::CreateLSContour()

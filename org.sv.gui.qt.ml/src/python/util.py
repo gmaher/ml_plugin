@@ -1,5 +1,66 @@
 import numpy as np
 import vtk
+from vtk import vtkImageExport
+from vtk.util import numpy_support
+
+def numpyToPd(d):
+    '''
+    input is a list of points
+    '''
+    pd = vtk.vtkPolyData()
+    pts = vtk.vtkPoints()
+
+    for p in d:
+        x1 = p[0]
+        x2 = p[1]
+        x3 = 0
+        pts.InsertNextPoint([x1,x2,x3])
+
+    pd.SetPoints(pts)
+
+    lines = vtk.vtkCellArray()
+    for i in range(len(d)-1):
+        l = vtk.vtkLine()
+        l.GetPointIds().SetId(0,i)
+        l.GetPointIds().SetId(1,i+1)
+        lines.InsertNextCell(l)
+
+    l = vtk.vtkLine()
+    l.GetPointIds().SetId(0,len(d)-1)
+    l.GetPointIds().SetId(1,0)
+    lines.InsertNextCell(l)
+
+    pd.SetLines(lines)
+
+    return pd
+
+def readVTKSP(fn):
+	'''
+	reads a vtk structured points object from a file
+	'''
+	sp_reader = vtk.vtkStructuredPointsReader()
+	sp_reader.SetFileName(fn)
+	sp_reader.Update()
+	sp = sp_reader.GetOutput()
+	return sp
+
+def writeSP(sp,fn):
+    writer = vtk.vtkStructuredPointsWriter()
+    writer.SetInputData(sp)
+    writer.SetFileName(fn)
+    writer.Write()
+
+def writePolydata(pd,fn):
+    writer = vtk.vtkPolyDataWriter()
+    writer.SetInputData(pd)
+    writer.SetFileName(fn)
+    writer.Write()
+
+def crop_center_nd(img,cropx,cropy):
+    s = img.shape
+    startx = s[1]//2-(cropx//2)
+    starty = s[2]//2-(cropy//2)
+    return img[:,starty:starty+cropy,startx:startx+cropx]
 
 def VTKSPtoNumpy(vol):
     '''
@@ -16,6 +77,7 @@ def VTKSPtoNumpy(vol):
     exporter.SetInputData(vol)
     dims = exporter.GetDataDimensions()
     if np.sum(dims) == 0:
+        raise RuntimeError('Error converting vtk structured points file to numpy array')
         return np.zeros((1,64,64))
     if (exporter.GetDataScalarType() == 3):
     	dtype = UnsignedInt8
@@ -35,15 +97,18 @@ def VTKSPtoNumpy(vol):
     return a
 
 def VTKSPtoNumpyFromFile(fn):
-	'''
-	reads a .vts file into a numpy array
-	args:
-		@a fn - string, filename of .sp file to read
-	'''
-	reader = vtk.vtkStructuredPointsReader()
-	reader.SetFileName(fn)
-	reader.Update()
-	sp = reader.GetOutput()
+    '''
+    reads a .vts file into a numpy array
+    args:
+    	@a fn - string, filename of .sp file to read
+    '''
+    reader = vtk.vtkStructuredPointsReader()
+    reader.SetFileName(fn)
+    reader.Update()
+    sp = reader.GetOutput()
+
+    if sp.GetNumberOfPoints() == 0:
+        raise RuntimeError("Error reading vtk structure points file {}".format(fn))
     return VTKSPtoNumpy(sp)
 
 def VTKNumpytoSP(img_):
@@ -61,12 +126,23 @@ def VTKNumpytoSP(img_):
 
     return sp
 
-def marchingSquares(img, iso=0.0, mode='center'):
-    s = img.shape
+def VTKPDPointstoNumpy(pd):
+	'''
+	function to convert the points data of a vtk polydata object to a numpy array
+
+	args:
+		@a pd: vtk.vtkPolyData object
+	'''
+	return numpy_support.vtk_to_numpy(pd.GetPoints().GetData())
+
+
+def marchingSquares(img, iso=0.0, mode='center',asNumpy=True):
     alg = vtk.vtkMarchingSquares()
 
-    sp = VTKNumpytoSP(img)
-
+    if asNumpy:
+        sp = VTKNumpytoSP(img)
+    else:
+        sp = img
     alg.SetInputData(sp)
     alg.SetValue(0,iso)
     alg.Update()
@@ -77,7 +153,7 @@ def marchingSquares(img, iso=0.0, mode='center'):
 
     if mode=='center':
         a.SetExtractionModeToClosestPointRegion()
-        a.SetClosestPoint(float(s[0])/2,float(s[1])/2,0.0)
+        a.SetClosestPoint(0.0,0.0,0.0)
 
     elif mode=='all':
         a.SetExtractionModeToAllRegions()
