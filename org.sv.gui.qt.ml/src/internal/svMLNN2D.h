@@ -70,7 +70,15 @@ public:
 
     if(!dir.exists(Qtmp_dir))
     {
+      std::cout <<"directory doesnt exist, creating\n";
         dir.mkdir(Qtmp_dir);
+    }
+    else {
+      std::cout << "directory exists removing\n";
+      dir.cd(Qtmp_dir);
+      dir.removeRecursively();
+      dir = getDir();
+      dir.mkdir(Qtmp_dir);
     }
 
   }
