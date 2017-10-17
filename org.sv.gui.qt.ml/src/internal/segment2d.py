@@ -3,6 +3,7 @@ import numpy as np
 import vtk
 import argparse
 import os
+import util
 
 parser = argparse.ArgumentParser()
 parser.add_argument('vtkfolder')
@@ -56,3 +57,4 @@ saver.restore(sess,'./models/i2i_CT/i2i_CT')
 # Get vts files
 #################################
 vts_files = os.listdir(folder)
+vts_nps = [util.VTKSPtoNumpy(v) for v in vts_files]
