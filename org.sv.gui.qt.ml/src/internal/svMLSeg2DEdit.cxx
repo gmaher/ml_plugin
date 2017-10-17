@@ -819,6 +819,11 @@ void svMLSeg2DEdit::CreateNNContour()
     nn.writeResliceImage(ui->resliceSlider->getPathPoint(posID),m_cvImage->GetVtkStructuredPoints(),posID);
   }
 
+  int status = nn.computSegmentations();
+  if (status == -1){
+    MITK_ERROR << "Comptuing neural network segmentations failed\n";
+    return;
+  }
   for(int i=0;i<posList.size();i++)
   {
       int posID=posList[i];

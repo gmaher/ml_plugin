@@ -1,3 +1,8 @@
+import sys
+sys.path += ['', '/home/marsdenlab/anaconda2/lib/python2.7/site-packages/google/','/home/marsdenlab/anaconda2/lib/python2.7/site-packages/google/protobuf','/home/marsdenlab/libraries/vmtk/build/Install/lib/python2.7/site-packages', '/home/marsdenlab/projects/SV3', '/home/marsdenlab/anaconda2/lib/python27.zip', '/home/marsdenlab/anaconda2/lib/python2.7', '/home/marsdenlab/anaconda2/lib/python2.7/plat-linux2', '/home/marsdenlab/anaconda2/lib/python2.7/lib-tk', '/home/marsdenlab/anaconda2/lib/python2.7/lib-old', '/home/marsdenlab/anaconda2/lib/python2.7/lib-dynload', '/home/marsdenlab/anaconda2/lib/python2.7/site-packages', '/home/marsdenlab/anaconda2/lib/python2.7/site-packages/Sphinx-1.5.4-py2.7.egg', '/home/marsdenlab/libraries/pybedtools', '/home/marsdenlab/projects/tcl_code/python/src/pyemd', '/home/marsdenlab/anaconda2/lib/python2.7/site-packages/setuptools-27.2.0-py2.7.egg']
+sys.path = [s for s in sys.path if "Externals-build" not in s]
+print sys.path
+print sys.executable
 import tensorflow as tf
 import numpy as np
 import vtk

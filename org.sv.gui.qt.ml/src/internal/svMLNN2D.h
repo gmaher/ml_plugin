@@ -155,19 +155,32 @@ public:
         dir.mkdir(Qtmp_dir);
     }
     else {
-      // std::cout << "directory exists removing\n";
-      // dir.cd(Qtmp_dir);
-      // dir.removeRecursively();
-      // dir = getDir();
-      // dir.mkdir(Qtmp_dir);
+      std::cout << "directory exists removing\n";
+      dir.cd(Qtmp_dir);
+      dir.removeRecursively();
+      dir = getDir();
+      dir.mkdir(Qtmp_dir);
     }
 
+  }
+
+  int computSegmentations(){
+    std::stringstream ss;
+
+    ss << "DYLD_LIBRARY_PATH=/home/marsdenlab/anaconda2/lib/ ";
+    ss << "/home/marsdenlab/anaconda2/bin/python ";
+    ss << "/home/marsdenlab/projects/SV3/ml_plugin/org.sv.gui.qt.ml/src/python/segment2d.py ";
+    ss << "/home/marsdenlab/projects/sv_test_project/tmp/ ";
+    ss << "ct";
+    std::cout << ss.str() << "\n";
+    return system(ss.str().c_str());
   }
 
   void segment(mitk::DataStorage* dataStorage){
     std::cout << "NN segmenting\n";
 
     makeDir(dataStorage);
+
   }
 
 private:
