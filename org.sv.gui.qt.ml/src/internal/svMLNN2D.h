@@ -167,7 +167,7 @@ public:
   int computSegmentations(){
     std::stringstream ss;
 
-    ss << "DYLD_LIBRARY_PATH=/home/marsdenlab/anaconda2/lib/ ";
+    ss << "export PYTHONHOME=/home/marsdenlab/anaconda2 &&";
     ss << "/home/marsdenlab/anaconda2/bin/python ";
     ss << "/home/marsdenlab/projects/SV3/ml_plugin/org.sv.gui.qt.ml/src/python/segment2d.py ";
     ss << "/home/marsdenlab/projects/sv_test_project/tmp/ ";

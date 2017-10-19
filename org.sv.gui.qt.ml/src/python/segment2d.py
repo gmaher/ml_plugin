@@ -28,7 +28,7 @@ modality = args.modality
 #################################
 C=1
 crop_dims = 128
-Nbatch = 32
+Nbatch = 16
 init = 6e-2
 Nfilters = 32
 EPS=1e-4
@@ -63,7 +63,7 @@ sess.run(tf.global_variables_initializer())
 # Load model
 #################################
 saver = tf.train.Saver()
-saver.restore(sess,'./models/i2i_CT/i2i_CT')
+saver.restore(sess,'/home/marsdenlab/projects/SV3/ml_plugin/org.sv.gui.qt.ml/src/python/models/i2i_CT/i2i_CT')
 
 #################################
 # Get vts files
