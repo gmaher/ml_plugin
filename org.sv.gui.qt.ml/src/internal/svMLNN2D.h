@@ -182,7 +182,7 @@ public:
 
     std::stringstream script;
     script << sv_ml_home;
-    script << "/python/segment2d.py";
+    script << "/segment2d.py";
 
     QDir dir = getDir();
 

@@ -1,11 +1,11 @@
 import os
 
 #Tensorflow wheels
-TF_LINUX = "https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.12.1-cp27-none-linux_x86_64.whl"
+TF_LINUX = "https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.3.0-cp27-none-linux_x86_64.whl"
 #TF_LINUX = "https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.12.1-cp35-cp35m-linux_x86_64.whl"
 #TF_OSX   = "https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-0.12.1-py3-none-any.whl"
-TF_OSX   = "https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-0.12.1-py2-none-any.whl"
-TF_WIN   = "https://storage.googleapis.com/tensorflow/windows/cpu/tensorflow-0.12.1-cp35-cp35m-win_amd64.whl"
+TF_OSX   = "https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-py2-none-any.whl"
+TF_WIN   = "https://storage.googleapis.com/tensorflow/windows/cpu/tensorflow-0.13.1-cp35-cp35m-win_amd64.whl"
 
 #Set up environment info
 OS        = os.name
