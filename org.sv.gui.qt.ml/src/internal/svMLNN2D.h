@@ -165,12 +165,33 @@ public:
   }
 
   int computSegmentations(){
-    std::stringstream ss;
 
-    ss << "export PYTHONHOME=/home/marsdenlab/anaconda2 &&";
-    ss << "/home/marsdenlab/anaconda2/bin/python ";
-    ss << "/home/marsdenlab/projects/SV3/ml_plugin/org.sv.gui.qt.ml/src/python/segment2d.py ";
-    ss << "/home/marsdenlab/projects/sv_test_project/tmp/ ";
+
+    const char* sv_ml_home = std::getenv("SV_ML_HOME");
+    if (!sv_ml_home){
+      std::cout <<"SV_ML_HOME environment variable missing\n";
+    }
+
+    std::stringstream py_home;
+    py_home << sv_ml_home;
+    py_home << "/anaconda";
+
+    std::stringstream python;
+    python << py_home.str();
+    python << "/bin/python";
+
+    std::stringstream script;
+    script << sv_ml_home;
+    script << "/python/segment2d.py";
+
+    QDir dir = getDir();
+
+    std::stringstream ss;
+    ss << "export PYTHONHOME=" << py_home.str() << " && ";
+    ss << python.str() << " ";
+    ss << script.str() << " ";
+    ss << dir.absolutePath().toStdString() << "/";
+    ss << TEMP_DIR_PATH << " ";
     ss << "ct";
     std::cout << ss.str() << "\n";
     return system(ss.str().c_str());

@@ -10,7 +10,6 @@ import argparse
 import os
 import util
 import layers as tf_util
-import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument('vtkfolder')

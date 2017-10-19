@@ -1,2 +1,5 @@
 /build/*
 /org.sv.gui.qt.ml/src/python/models/
+*.sh
+/anaconda/
+/org.sv.gui.qt.ml/src/python/anaconda/
