@@ -10,6 +10,7 @@ import argparse
 import os
 import util
 import layers as tf_util
+import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument('vtkfolder')
@@ -32,6 +33,7 @@ init = 6e-2
 Nfilters = 32
 EPS=1e-4
 leaky_relu = tf.contrib.keras.layers.LeakyReLU(0.2)
+ISO_SEG = 0.2
 ISOVALUE = 0.1
 #################################
 # Build tensorflow model
@@ -55,13 +57,14 @@ with tf.device('/cpu:0'):
     yhat = tf_util.conv2D(y_sp_2, nfilters=1, activation=tf.identity, init=init,scope='sp6')
     yclass = tf.sigmoid(yhat)
 
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
+    sess = tf.Session()
+    sess.run(tf.global_variables_initializer())
 
 #################################
 # Load model
 #################################
 MODEL_DIR = os.environ['SV_ML_HOME']+'/models/i2i_CT/i2i_CT'
+# MODEL_DIR = '/home/marsdenlab/projects/DeepLofting/python/models/i2i_CT/i2i_CT'
 saver = tf.train.Saver()
 saver.restore(sess,MODEL_DIR)
 
@@ -81,12 +84,20 @@ if any([(v.shape[1]<crop_dims or v.shape[2] < crop_dims) for v in vts_nps]):
     raise RuntimeError("Error Vtk structured points files have dimension smaller than 128x128, need at least 128x128")
 
 #Crop and normalize the images
-vts_nps = [util.crop_center_nd(v,crop_dims,crop_dims) for v in vts_nps]
-vts_nps = np.asarray(vts_nps)[:,0,:,:,np.newaxis].astype(float)
+M = len(vts_nps)
+V = np.zeros((M,crop_dims,crop_dims,1))
+for i in range(M):
+    v = vts_nps[i][0]
+    print v.shape
+    V[i,:,:,0] = util.crop_center(v,crop_dims,crop_dims)
+vts_nps = V
+#vts_nps = [util.crop_center_nd(v,crop_dims,crop_dims) for v in vts_nps]
+#vts_nps = np.asarray(vts_nps)[:,0,:,:,np.newaxis].astype(float)
 print vts_nps.shape
 
 if modality == 'ct':
-    vts_nps = 1.0*(vts_nps+1000)/2000
+    #vts_nps = 1.0*vts_nps/3000
+    vts_nps = 1.0*vts_nps/3000
 if modality == 'mr':
     raise RuntimeError('MR Not implemented yet')
 
@@ -109,25 +120,27 @@ print vts_nps.shape
 print "Segmenting images"
 segmented_images = sess.run(yclass,{x:vts_nps})
 segmented_images = segmented_images[:NUMBER_OF_IMAGES]
+# segmented_images = util.threshold(segmented_images,ISOSEG)
 
 #TEST
-# for i in range(NUMBER_OF_IMAGES):
-#     index = vts_files[i].split('/')[-1].replace('.vts','')
-#     plt.figure()
-#     plt.imshow(segmented_images[i,:,:,0])
-#     plt.colorbar()
-#     plt.savefig(folder+'{}_seg.png'.format(index),dpi=300)
-#     plt.close()
-#
-#     plt.figure()
-#     plt.imshow(vts_nps[i,:,:,0])
-#     plt.colorbar()
-#     plt.savefig(folder+'{}_img.png'.format(index),dpi=300)
-#     plt.close()
+for i in range(NUMBER_OF_IMAGES):
+    index = vts_files[i].split('/')[-1].replace('.vts','')
+    plt.figure()
+    plt.imshow(segmented_images[i,:,:,0],cmap='gray')
+    plt.colorbar()
+    plt.savefig(folder+'{}_seg.png'.format(index),dpi=300)
+    plt.close()
+
+    plt.figure()
+    plt.imshow(vts_nps[i,:,:,0],cmap='gray')
+    plt.colorbar()
+    plt.savefig(folder+'{}_img.png'.format(index),dpi=300)
+    plt.close()
 #convert segmented images to structured points
 segmented_vts = []
 for i in range(NUMBER_OF_IMAGES):
-    v = util.VTKNumpytoSP(segmented_images[i,:,:,0])
+    s = np.flipud(segmented_images[i,:,:,0])
+    v = util.VTKNumpytoSP(s)
     sp = vts_vtks[i]
     spacing = sp.GetSpacing()
     origin = [-64*spacing[0],-64*spacing[1],0.0]

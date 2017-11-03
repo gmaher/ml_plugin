@@ -1,6 +1,14 @@
 import tensorflow as tf
 import numpy as np
 
+def l2_reg(lam):
+    l = 0.0
+    train_vars = [v for v in tf.trainable_variables() if 'W' in v.name]
+    N = len(train_vars)
+    for v in train_vars:
+        l += (lam/N)*tf.reduce_mean(tf.square(v))
+    return l
+
 def conv2D(x, dims=[3,3], nfilters=32, strides=[1,1],
            init=1e-3, padding='SAME', activation=tf.identity, scope='conv2d', reuse=False):
     """
@@ -88,7 +96,11 @@ def resize_tensor(x,scales=[1,2,2,1]):
 
 def upsample2D(x, scope='upsample'):
     with tf.variable_scope(scope):
-        o = resize_tensor(x)
+        #o = resize_tensor(x)
+        s = x.get_shape().as_list()
+        s = [s[1]*2,s[2]*2]
+        #Defaults to bilinear
+        o = tf.image.resize_images(x,s)
         return o
 
 def I2INetBlock(x,nfilters=32,init='xavier',activation=tf.nn.relu, num=2,scope='i2i'):
@@ -124,3 +136,47 @@ def I2INet(x, nfilters=32, init='xavier', activation=tf.nn.relu):
     out = conv2D(o2,nfilters=1,activation=tf.identity)
     out_class = tf.sigmoid(out)
     return out_class,out,o3,o4
+
+def class_balanced_cross_entropy(pred, label, name='cross_entropy_loss'):
+    """
+    The class-balanced cross entropy loss,
+    as in `Holistically-Nested Edge Detection
+    <http://arxiv.org/abs/1504.06375>`_.
+    Args:
+        pred: of shape (b, ...). the predictions in [0,1].
+        label: of the same shape. the ground truth in {0,1}.
+    Returns:
+        class-balanced cross entropy loss.
+    """
+    with tf.name_scope('class_balanced_cross_entropy'):
+        z = batch_flatten(pred)
+        y = tf.cast(batch_flatten(label), tf.float32)
+
+        count_neg = tf.reduce_sum(1. - y)
+        count_pos = tf.reduce_sum(y)
+        beta = count_neg / (count_neg + count_pos)
+
+        eps = 1e-12
+        loss_pos = -beta * tf.reduce_mean(y * tf.log(z + eps))
+        loss_neg = (1. - beta) * tf.reduce_mean((1. - y) * tf.log(1. - z + eps))
+    cost = tf.subtract(loss_pos, loss_neg, name=name)
+    return cost
+
+
+def class_balanced_sigmoid_cross_entropy(logits, label, name='cross_entropy_loss'):
+    """
+    This function accepts logits rather than predictions, and is more numerically stable than
+    :func:`class_balanced_cross_entropy`.
+    """
+    with tf.name_scope('class_balanced_sigmoid_cross_entropy'):
+        y = tf.cast(label, tf.float32)
+
+        count_neg = tf.reduce_sum(1. - y)
+        count_pos = tf.reduce_sum(y)
+        beta = count_neg / (count_neg + count_pos)
+
+        pos_weight = beta / (1 - beta)
+        cost = tf.nn.weighted_cross_entropy_with_logits(logits=logits, targets=y, pos_weight=pos_weight)
+        cost = tf.reduce_mean(cost * (1 - beta))
+        zero = tf.equal(count_pos, 0.0)
+    return tf.where(zero, 0.0, cost, name=name)
