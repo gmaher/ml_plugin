@@ -3,6 +3,26 @@ import vtk
 from vtk import vtkImageExport
 from vtk.util import numpy_support
 
+def crop_center(img,cropx,cropy):
+    y,x = img.shape
+    startx = x//2-(cropx//2)
+    starty = y//2-(cropy//2)
+    return img[starty:starty+cropy,startx:startx+cropx]
+
+def threshold(x,value):
+	'''
+	sets all values below value to 0 and above to 1
+
+	args:
+		@a x: the array to threshold
+		@a value: the cutoff value
+	'''
+	inds = x < value
+	y = np.copy(x)
+	y[x < value] = 0
+	y[x >= value] = 1
+	return y
+
 def numpyToPd(d):
     '''
     input is a list of points
