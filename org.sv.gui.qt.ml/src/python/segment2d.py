@@ -35,6 +35,8 @@ EPS=1e-4
 leaky_relu = tf.contrib.keras.layers.LeakyReLU(0.2)
 ISO_SEG = 0.2
 ISOVALUE = 0.1
+lam = 1e-3
+lr = 1e-4
 #################################
 # Build tensorflow model
 #################################
@@ -42,12 +44,16 @@ with tf.device('/cpu:0'):
     x = tf.placeholder(shape=[None,crop_dims,crop_dims,C],dtype=tf.float32)
     y = tf.placeholder(shape=[None,crop_dims,crop_dims,C],dtype=tf.float32)
 
+    ###############
+    # I2I
+    ###############
+
     yclass,yhat,o3,o4 = tf_util.I2INet(x,nfilters=Nfilters,activation=leaky_relu,init=init)
 
-    y_vec = tf.reshape(yclass, (Nbatch,crop_dims**2))
+    y_vec = tf.reshape(yhat, (Nbatch,crop_dims**2))
 
-    sp = tf_util.fullyConnected(y_vec,crop_dims,leaky_relu, std=init, scope='sp1')
-    sp = tf_util.fullyConnected(y_vec,crop_dims**2,leaky_relu, std=init, scope='sp2')
+    sp = tf_util.fullyConnected(y_vec,crop_dims,leaky_relu, std='xavier', scope='sp1')
+    sp = tf_util.fullyConnected(y_vec,crop_dims**2,leaky_relu, std='xavier', scope='sp2')
     sp = tf.reshape(sp, (Nbatch,crop_dims,crop_dims,1))
 
     y_sp = tf_util.conv2D(sp, nfilters=Nfilters, activation=leaky_relu,init=init, scope='sp3')
@@ -55,16 +61,29 @@ with tf.device('/cpu:0'):
     y_sp_2 = tf_util.conv2D(y_sp_1, nfilters=Nfilters, activation=leaky_relu, init=init,scope='sp5')
 
     yhat = tf_util.conv2D(y_sp_2, nfilters=1, activation=tf.identity, init=init,scope='sp6')
+
     yclass = tf.sigmoid(yhat)
 
-    sess = tf.Session()
-    sess.run(tf.global_variables_initializer())
+    # TP = tf.reduce_sum(yclass*y)
+    # FP = tf.reduce_sum(yclass*(1-y))
+    # FN = tf.reduce_sum((1-yclass)*y)
+    # loss = -TP/(TP + alph*FP+beta*FN+EPS)
+
+    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=yhat,labels=y))
+
+    loss = loss + tf_util.l2_reg(lam)
+
+    opt = tf.train.AdamOptimizer(lr)
+    train = opt.minimize(loss)
+
+sess = tf.Session()
+# sess.run(tf.global_variables_initializer())
 
 #################################
 # Load model
 #################################
 MODEL_DIR = os.environ['SV_ML_HOME']+'/models/i2i_CT/i2i_CT'
-# MODEL_DIR = '/home/marsdenlab/projects/DeepLofting/python/models/i2i_CT/i2i_CT'
+#MODEL_DIR = '/home/marsdenlab/projects/DeepLofting/python/models/i2i_CT/i2i_CT'
 saver = tf.train.Saver()
 saver.restore(sess,MODEL_DIR)
 
@@ -89,16 +108,18 @@ V = np.zeros((M,crop_dims,crop_dims,1))
 for i in range(M):
     v = vts_nps[i][0]
     print v.shape
-    V[i,:,:,0] = util.crop_center(v,crop_dims,crop_dims)
+    V[i] = util.crop_center(v,crop_dims,crop_dims).reshape(128,128,1)
 vts_nps = V
 #vts_nps = [util.crop_center_nd(v,crop_dims,crop_dims) for v in vts_nps]
 #vts_nps = np.asarray(vts_nps)[:,0,:,:,np.newaxis].astype(float)
 print vts_nps.shape
 
 if modality == 'ct':
+    print "CT"
     #vts_nps = 1.0*vts_nps/3000
     vts_nps = 1.0*vts_nps/3000
 if modality == 'mr':
+    print "MR"
     raise RuntimeError('MR Not implemented yet')
 
 #Need there to be a multiple of Nbatch images
@@ -117,10 +138,20 @@ print vts_nps.shape
 ###############################
 #Segment
 ###############################
+#TEST
+for i in range(NUMBER_OF_IMAGES):
+    index = vts_files[i].split('/')[-1].replace('.vts','')
+
+    plt.figure()
+    plt.imshow(vts_nps[i,:,:,0],cmap='gray')
+    plt.colorbar()
+    plt.savefig(folder+'{}_img_before.png'.format(index),dpi=300)
+    plt.close()
+
 print "Segmenting images"
 segmented_images = sess.run(yclass,{x:vts_nps})
 segmented_images = segmented_images[:NUMBER_OF_IMAGES]
-# segmented_images = util.threshold(segmented_images,ISOSEG)
+segmented_images = util.threshold(segmented_images,ISO_SEG)
 
 #TEST
 for i in range(NUMBER_OF_IMAGES):
@@ -139,7 +170,7 @@ for i in range(NUMBER_OF_IMAGES):
 #convert segmented images to structured points
 segmented_vts = []
 for i in range(NUMBER_OF_IMAGES):
-    s = np.flipud(segmented_images[i,:,:,0])
+    s = segmented_images[i,:,:,0]
     v = util.VTKNumpytoSP(s)
     sp = vts_vtks[i]
     spacing = sp.GetSpacing()
