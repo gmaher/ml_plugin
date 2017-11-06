@@ -819,7 +819,16 @@ void svMLSeg2DEdit::CreateNNContour()
     nn.writeResliceImage(ui->resliceSlider->getPathPoint(posID),m_cvImage->GetVtkStructuredPoints(),posID);
   }
 
-  int status = nn.computSegmentations();
+  int status = -1;
+  if(ui->radioCT->isChecked()){
+      status = nn.computeSegmentations("ct");
+  } else if(ui->radioMR->isChecked()){
+      status = nn.computeSegmentations("mr");
+  }else {
+    MITK_ERROR << "Must select modality for 2D CNN segmentations\n";
+    return;
+  }
+
   if (status == -1){
     MITK_ERROR << "Comptuing neural network segmentations failed\n";
     return;

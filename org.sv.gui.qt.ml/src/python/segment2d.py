@@ -69,12 +69,12 @@ with tf.device('/cpu:0'):
     # FN = tf.reduce_sum((1-yclass)*y)
     # loss = -TP/(TP + alph*FP+beta*FN+EPS)
 
-    loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=yhat,labels=y))
-
-    loss = loss + tf_util.l2_reg(lam)
-
-    opt = tf.train.AdamOptimizer(lr)
-    train = opt.minimize(loss)
+    # loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=yhat,labels=y))
+    #
+    # loss = loss + tf_util.l2_reg(lam)
+    #
+    # opt = tf.train.AdamOptimizer(lr)
+    # train = opt.minimize(loss)
 
 sess = tf.Session()
 # sess.run(tf.global_variables_initializer())
@@ -82,7 +82,12 @@ sess = tf.Session()
 #################################
 # Load model
 #################################
-MODEL_DIR = os.environ['SV_ML_HOME']+'/models/i2i_CT/i2i_CT'
+if modality == 'ct':
+    MODEL_DIR = os.environ['SV_ML_HOME']+'/models/i2i_CT/i2i_CT'
+elif modality == 'mr':
+    MODEL_DIR = os.environ['SV_ML_HOME']+'/models/i2i_MR/i2i_MR'
+else:
+    raise RuntimeError('Unsupported modality {}'.format(modality))
 #MODEL_DIR = '/home/marsdenlab/projects/DeepLofting/python/models/i2i_CT/i2i_CT'
 saver = tf.train.Saver()
 saver.restore(sess,MODEL_DIR)
@@ -119,8 +124,8 @@ if modality == 'ct':
     #vts_nps = 1.0*vts_nps/3000
     vts_nps = 1.0*vts_nps/3000
 if modality == 'mr':
+    vts_nps = 2*(1.0*vts_nps-np.amin(vts_nps))/(np.amax(vts_nps)-np.amin(vts_nps))-1
     print "MR"
-    raise RuntimeError('MR Not implemented yet')
 
 #Need there to be a multiple of Nbatch images
 print "Padding images to be multiple of Nbatch"
@@ -149,7 +154,14 @@ for i in range(NUMBER_OF_IMAGES):
     plt.close()
 
 print "Segmenting images"
-segmented_images = sess.run(yclass,{x:vts_nps})
+segmented_images = []
+for i in range(0,vts_nps.shape[0],Nbatch):
+    segs = sess.run(yclass,{x:vts_nps[i:i+Nbatch]})
+    if segmented_images == []:
+        segmented_images = segs
+    else:
+        segmented_images = np.concatenate((segmented_images,segs))
+
 segmented_images = segmented_images[:NUMBER_OF_IMAGES]
 segmented_images = util.threshold(segmented_images,ISO_SEG)
 
