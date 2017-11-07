@@ -775,6 +775,10 @@ void svMLSeg2DEdit::ResetGUI()
 
 void svMLSeg2DEdit::CreateNNContour()
 {
+  if(!ui->radioCT->isChecked() and !ui->radioMR->isChecked()){
+    MITK_ERROR << "Must select modality for 2D CNN segmentations\n";
+    return;
+  }
   svMLNN2D nn;
   nn.segment(GetDataStorage());
 

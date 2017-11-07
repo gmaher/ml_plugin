@@ -11,7 +11,8 @@ import os
 import util
 import layers as tf_util
 import matplotlib.pyplot as plt
-
+from scipy.ndimage.morphology import binary_fill_holes, binary_erosion
+#from skimage.segmentation import chan_vese
 parser = argparse.ArgumentParser()
 parser.add_argument('vtkfolder')
 parser.add_argument('modality', choices=['ct','mr'])
@@ -37,6 +38,9 @@ ISO_SEG = 0.2
 ISOVALUE = 0.1
 lam = 1e-3
 lr = 1e-4
+ERODE_ITERS = 1
+SMOOTH_FACTOR = 0.95
+MAX_LS_ITER = 10
 #################################
 # Build tensorflow model
 #################################
@@ -110,6 +114,8 @@ if any([(v.shape[1]<crop_dims or v.shape[2] < crop_dims) for v in vts_nps]):
 #Crop and normalize the images
 M = len(vts_nps)
 V = np.zeros((M,crop_dims,crop_dims,1))
+max_ = np.amax(vts_nps)
+min_ = np.amin(vts_nps)
 for i in range(M):
     v = vts_nps[i][0]
     print v.shape
@@ -124,7 +130,7 @@ if modality == 'ct':
     #vts_nps = 1.0*vts_nps/3000
     vts_nps = 1.0*vts_nps/3000
 if modality == 'mr':
-    vts_nps = 2*(1.0*vts_nps-np.amin(vts_nps))/(np.amax(vts_nps)-np.amin(vts_nps))-1
+    vts_nps = 2.0*(1.0*vts_nps-min_)/(max_-min_)-1
     print "MR"
 
 #Need there to be a multiple of Nbatch images
@@ -165,6 +171,17 @@ for i in range(0,vts_nps.shape[0],Nbatch):
 segmented_images = segmented_images[:NUMBER_OF_IMAGES]
 segmented_images = util.threshold(segmented_images,ISO_SEG)
 
+# mid = NUMBER_OF_IMAGES/2
+# for i in range(mid,NUMBER_OF_IMAGES-1):
+#     segmented_images[i+1,:,:,0] = (1-SMOOTH_FACTOR)*segmented_images[i+1,:,:,0] + SMOOTH_FACTOR*segmented_images[i,:,:,0]
+#
+# for i in range(mid,0,-1):
+#     segmented_images[i-1,:,:,0] = (1-SMOOTH_FACTOR)*segmented_images[i-1,:,:,0] + SMOOTH_FACTOR*segmented_images[i,:,:,0]
+
+for i in range(NUMBER_OF_IMAGES):
+    segmented_images[i,:,:,0] = binary_fill_holes(segmented_images[i,:,:,0])
+    segmented_images[i,:,:,0] = binary_erosion(segmented_images[i,:,:,0],iterations=ERODE_ITERS)
+    #segmented_images[i,:,:,0] = chan_vese(vts_nps[i,:,:,0],init_level_set=segmented_images[i,:,:,0])
 #TEST
 for i in range(NUMBER_OF_IMAGES):
     index = vts_files[i].split('/')[-1].replace('.vts','')
