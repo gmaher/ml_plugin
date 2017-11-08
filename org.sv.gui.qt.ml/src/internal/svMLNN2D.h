@@ -96,6 +96,7 @@ public:
     }
 
     contour->SetClosed(ifClosed);
+    std::cout << "set contour";
     contour->SetContourPoints(contourPoints);
 
     return contour;

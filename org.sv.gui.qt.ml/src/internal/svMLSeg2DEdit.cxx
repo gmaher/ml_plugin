@@ -850,11 +850,8 @@ void svMLSeg2DEdit::CreateNNContour()
       if(contour && contour->GetContourPointNumber()>2)
       {
           contour=PostprocessContour(contour);
-
           InsertContourByPathPosPoint(contour);
-
           LoftContourGroup();
-
           mitk::StatusBar::GetInstance()->DisplayText("contour added");
       }
       else
