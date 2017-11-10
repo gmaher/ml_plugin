@@ -775,6 +775,10 @@ void svMLSeg2DEdit::ResetGUI()
 
 void svMLSeg2DEdit::CreateNNContour()
 {
+  if(!ui->radioCT->isChecked() and !ui->radioMR->isChecked()){
+    MITK_ERROR << "Must select modality for 2D CNN segmentations\n";
+    return;
+  }
   svMLNN2D nn;
   nn.segment(GetDataStorage());
 
@@ -819,7 +823,16 @@ void svMLSeg2DEdit::CreateNNContour()
     nn.writeResliceImage(ui->resliceSlider->getPathPoint(posID),m_cvImage->GetVtkStructuredPoints(),posID);
   }
 
-  int status = nn.computSegmentations();
+  int status = -1;
+  if(ui->radioCT->isChecked()){
+      status = nn.computeSegmentations("ct");
+  } else if(ui->radioMR->isChecked()){
+      status = nn.computeSegmentations("mr");
+  }else {
+    MITK_ERROR << "Must select modality for 2D CNN segmentations\n";
+    return;
+  }
+
   if (status == -1){
     MITK_ERROR << "Comptuing neural network segmentations failed\n";
     return;
@@ -837,11 +850,8 @@ void svMLSeg2DEdit::CreateNNContour()
       if(contour && contour->GetContourPointNumber()>2)
       {
           contour=PostprocessContour(contour);
-
           InsertContourByPathPosPoint(contour);
-
           LoftContourGroup();
-
           mitk::StatusBar::GetInstance()->DisplayText("contour added");
       }
       else

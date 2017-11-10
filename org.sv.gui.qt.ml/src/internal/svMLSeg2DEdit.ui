@@ -229,6 +229,30 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="modalityLabel">
+     <property name="text">
+      <string>Image Modality (CNN Only)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="radioCT">
+     <property name="text">
+      <string>CT</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="radioMR">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>MR</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="Line" name="line_3">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>

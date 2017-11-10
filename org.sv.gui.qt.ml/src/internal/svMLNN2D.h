@@ -96,6 +96,7 @@ public:
     }
 
     contour->SetClosed(ifClosed);
+    std::cout << "set contour";
     contour->SetContourPoints(contourPoints);
 
     return contour;
@@ -164,7 +165,7 @@ public:
 
   }
 
-  int computSegmentations(){
+  int computeSegmentations(std::string modality){
 
 
     const char* sv_ml_home = std::getenv("SV_ML_HOME");
@@ -192,7 +193,7 @@ public:
     ss << script.str() << " ";
     ss << dir.absolutePath().toStdString() << "/";
     ss << TEMP_DIR_PATH << " ";
-    ss << "ct";
+    ss << modality;
     std::cout << ss.str() << "\n";
     return system(ss.str().c_str());
   }
