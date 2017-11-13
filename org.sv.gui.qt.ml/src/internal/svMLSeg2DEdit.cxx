@@ -865,6 +865,7 @@ void svMLSeg2DEdit::CreateNNContour()
 
       mitk::ProgressBar::GetInstance()->Progress(1);
   }
+  nn.saveSegmentations(m_ContourGroupNode->GetName());
 }
 
 void svMLSeg2DEdit::CreateLSContour()

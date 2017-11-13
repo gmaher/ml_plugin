@@ -6,6 +6,7 @@
 #include "svMLNN2D.h"
 #include "svSegmentationUtils.h"
 #include "svContour.h"
+#include "svContourGroup.h"
 #include "cvPolyData.h"
 #include "cv_sys_geom.h"
 #include <mitkNodePredicateDataType.h>
@@ -18,10 +19,11 @@
 #include <vtkPolyDataReader.h>
 #include <vtkSmartPointer.h>
 #include <sstream>
+#include <mitkIOUtil.h>
 
 static const int SIZE = 128;
 static const std::string TEMP_DIR_PATH = "tmp";
-
+static const std::string STORE_PATH = "nn2d_seg";
 class svMLNN2D{
 
 public:
@@ -147,8 +149,12 @@ public:
     m_DS = dataStorage;
 
     QDir dir = getDir();
+
     QString Qtmp_dir = QString::QString(TEMP_DIR_PATH.c_str());
+    QString Qstore_dir = QString::QString(STORE_PATH.c_str());
+
     m_TmpDir = Qtmp_dir;
+    m_StoreDir = Qstore_dir;
 
     if(!dir.exists(Qtmp_dir))
     {
@@ -161,6 +167,12 @@ public:
       dir.removeRecursively();
       dir = getDir();
       dir.mkdir(Qtmp_dir);
+    }
+
+    if(!dir.exists(Qstore_dir))
+    {
+      std::cout <<"directory doesnt exist, creating\n";
+        dir.mkdir(Qstore_dir);
     }
 
   }
@@ -205,10 +217,38 @@ public:
 
   }
 
+  void saveSegmentations(std::string groupName){
+
+
+    mitk::NodePredicateDataType::Pointer TypeCondition = mitk::NodePredicateDataType::New("svContourGroup");
+    mitk::DataStorage::SetOfObjects::ConstPointer rs=m_DS->GetSubset(TypeCondition);
+
+    QDir dir = getDir();
+    dir.cd(m_StoreDir);
+
+    for (int i =0; i < rs->size(); i++){
+      mitk::DataNode::Pointer node=rs->GetElement(i);
+      svContourGroup *contourGroup=dynamic_cast<svContourGroup*>(node->GetData());
+
+      if(contourGroup && node->GetName()==groupName)
+      {
+
+          QString	filePath=dir.absoluteFilePath(QString::fromStdString(node->GetName())+".ctgr");
+          mitk::IOUtil::Save(node->GetData(),filePath.toStdString());
+          node->SetStringProperty("path",dir.absolutePath().toStdString().c_str());
+          contourGroup->SetDataModified(false);
+          std::cout << "Saved contour group " << groupName << "\n";
+      }
+    }
+
+  }
+
+
 private:
 
   mitk::DataStorage* m_DS;
   QString m_TmpDir;
+  QString m_StoreDir;
 };
 
 #endif // SVMLNN2D_H
