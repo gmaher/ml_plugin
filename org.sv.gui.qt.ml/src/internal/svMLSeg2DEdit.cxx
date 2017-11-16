@@ -122,9 +122,8 @@ void svMLSeg2DEdit::CreateQtPartControl( QWidget *parent )
     ui->lsParamWidgetContainer->hide();
 
     ui->thresholdWidgetContainer->hide();
-    ui->smoothWidget->hide();
     ui->splineWidget->hide();
-    ui->batchWidget->hide();
+    // ui->batchWidget->hide();
 
     parent->setMinimumWidth(400);
 //    parent->setFixedWidth(400);
