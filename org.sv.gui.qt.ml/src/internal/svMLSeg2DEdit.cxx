@@ -774,7 +774,7 @@ void svMLSeg2DEdit::ResetGUI()
 
 void svMLSeg2DEdit::CreateNNContour()
 {
-  if(!ui->radioCT->isChecked() and !ui->radioMR->isChecked()){
+  if(!ui->radioCT->isChecked() and !ui->radioMR->isChecked() and !ui->radioCoronary->isChecked()){
     MITK_ERROR << "Must select modality for 2D CNN segmentations\n";
     return;
   }
@@ -827,6 +827,8 @@ void svMLSeg2DEdit::CreateNNContour()
       status = nn.computeSegmentations("ct");
   } else if(ui->radioMR->isChecked()){
       status = nn.computeSegmentations("mr");
+  } else if(ui->radioCoronary->isChecked()) {
+      status = nn.computeSegmentations("coronary");
   }else {
     MITK_ERROR << "Must select modality for 2D CNN segmentations\n";
     return;

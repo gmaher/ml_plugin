@@ -15,7 +15,7 @@ from scipy.ndimage.morphology import binary_fill_holes, binary_erosion
 #from skimage.segmentation import chan_vese
 parser = argparse.ArgumentParser()
 parser.add_argument('vtkfolder')
-parser.add_argument('modality', choices=['ct','mr'])
+parser.add_argument('modality', choices=['ct','mr','coronary'])
 
 args = parser.parse_args()
 
@@ -35,10 +35,10 @@ Nfilters = 32
 EPS=1e-4
 leaky_relu = tf.contrib.keras.layers.LeakyReLU(0.2)
 ISO_SEG = 0.2
-ISOVALUE = 0.1
+ISOVALUE = 0.2
 lam = 1e-3
 lr = 1e-4
-ERODE_ITERS = 1
+ERODE_ITERS = 2
 SMOOTH_FACTOR = 0.95
 MAX_LS_ITER = 10
 #################################
@@ -90,6 +90,8 @@ if modality == 'ct':
     MODEL_DIR = os.environ['SV_ML_HOME']+'/models/i2i_CT/i2i_CT'
 elif modality == 'mr':
     MODEL_DIR = os.environ['SV_ML_HOME']+'/models/i2i_MR/i2i_MR'
+elif modality == 'coronary':
+    MODEL_DIR = os.environ['SV_ML_HOME']+'/models/i2i_coronary/I2I'
 else:
     raise RuntimeError('Unsupported modality {}'.format(modality))
 #MODEL_DIR = '/home/marsdenlab/projects/DeepLofting/python/models/i2i_CT/i2i_CT'
@@ -169,19 +171,7 @@ for i in range(0,vts_nps.shape[0],Nbatch):
         segmented_images = np.concatenate((segmented_images,segs))
 
 segmented_images = segmented_images[:NUMBER_OF_IMAGES]
-segmented_images = util.threshold(segmented_images,ISO_SEG)
 
-# mid = NUMBER_OF_IMAGES/2
-# for i in range(mid,NUMBER_OF_IMAGES-1):
-#     segmented_images[i+1,:,:,0] = (1-SMOOTH_FACTOR)*segmented_images[i+1,:,:,0] + SMOOTH_FACTOR*segmented_images[i,:,:,0]
-#
-# for i in range(mid,0,-1):
-#     segmented_images[i-1,:,:,0] = (1-SMOOTH_FACTOR)*segmented_images[i-1,:,:,0] + SMOOTH_FACTOR*segmented_images[i,:,:,0]
-
-for i in range(NUMBER_OF_IMAGES):
-    segmented_images[i,:,:,0] = binary_fill_holes(segmented_images[i,:,:,0])
-    segmented_images[i,:,:,0] = binary_erosion(segmented_images[i,:,:,0],iterations=ERODE_ITERS)
-    #segmented_images[i,:,:,0] = chan_vese(vts_nps[i,:,:,0],init_level_set=segmented_images[i,:,:,0])
 #TEST
 for i in range(NUMBER_OF_IMAGES):
     index = vts_files[i].split('/')[-1].replace('.vts','')
@@ -196,10 +186,29 @@ for i in range(NUMBER_OF_IMAGES):
     plt.colorbar()
     plt.savefig(folder+'{}_img.png'.format(index),dpi=300)
     plt.close()
+
+#THRESHOLD
+segmented_images = util.threshold(segmented_images,ISO_SEG)
+
+# mid = NUMBER_OF_IMAGES/2
+# for i in range(mid,NUMBER_OF_IMAGES-1):
+#     segmented_images[i+1,:,:,0] = (1-SMOOTH_FACTOR)*segmented_images[i+1,:,:,0] + SMOOTH_FACTOR*segmented_images[i,:,:,0]
+#
+# for i in range(mid,0,-1):
+#     segmented_images[i-1,:,:,0] = (1-SMOOTH_FACTOR)*segmented_images[i-1,:,:,0] + SMOOTH_FACTOR*segmented_images[i,:,:,0]
+
+for i in range(NUMBER_OF_IMAGES):
+    segmented_images[i,:,:,0] = binary_fill_holes(segmented_images[i,:,:,0])
+    #if not modality == 'coronary':
+        #segmented_images[i,:,:,0] = binary_erosion(segmented_images[i,:,:,0],iterations=ERODE_ITERS)
+    #segmented_images[i,:,:,0] = chan_vese(vts_nps[i,:,:,0],init_level_set=segmented_images[i,:,:,0])
+
 #convert segmented images to structured points
 segmented_vts = []
 for i in range(NUMBER_OF_IMAGES):
     s = segmented_images[i,:,:,0]
+    if np.sum(s)==0: continue
+        #raise RuntimeError('empty segmentation produced at {}th image'.format(i))
     v = util.VTKNumpytoSP(s)
     sp = vts_vtks[i]
     spacing = sp.GetSpacing()

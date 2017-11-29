@@ -253,6 +253,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QRadioButton" name="radioCoronary">
+     <property name="text">
+      <string>Coronary</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="Line" name="line_3">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
