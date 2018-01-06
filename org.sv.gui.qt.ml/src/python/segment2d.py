@@ -11,11 +11,12 @@ import os
 import util
 import layers as tf_util
 import matplotlib.pyplot as plt
-from scipy.ndimage.morphology import binary_fill_holes, binary_erosion
+from scipy.ndimage.morphology import binary_fill_holes, binary_erosion, binary_dilation
+
 #from skimage.segmentation import chan_vese
 parser = argparse.ArgumentParser()
 parser.add_argument('vtkfolder')
-#parser.add_argument('modality', choices=['ct','mr','coronary'])
+parser.add_argument('modality', choices=['ct','mr','coronary'])
 
 args = parser.parse_args()
 
@@ -34,7 +35,7 @@ init = 6e-2
 Nfilters = 32
 EPS=1e-4
 leaky_relu = tf.contrib.keras.layers.LeakyReLU(0.2)
-ISO_SEG = 0.35
+ISO_SEG = 0.1
 ISOVALUE = 0.5
 lam = 1e-3
 lr = 1e-4
@@ -49,15 +50,16 @@ with tf.device('/cpu:0'):
     #################################
     # Load model
     #################################
-    from dl_template.experiment.I2INet import Model
+    sys.path.append(os.environ['SV_ML_HOME']+'/dl_template')
+    from dl_template.experiments.I2INet import Model
     from dl_template.modules import io
 
-    global_config_file = os.environ['SV_ML_HOME']+'/config/global.yaml'
-    case_config_file = os.environ['SV_ML_HOME']+'/config/case1_perturb15.yaml'
+    global_config_file = os.environ['SV_ML_HOME']+'/dl_template/config/global.yaml'
+    case_config_file = os.environ['SV_ML_HOME']+'/dl_template/config/case1_perturb15.yaml'
 
     global_config = io.load_yaml(global_config_file)
     case_config   = io.load_yaml(case_config_file)
-
+    case_config['MODEL_DIR'] = os.environ['SV_ML_HOME']+case_config['MODEL_DIR']
     model = Model(global_config, case_config)
     model.load()
 
@@ -149,7 +151,27 @@ for i in range(NUMBER_OF_IMAGES):
 segmented_images = util.threshold(segmented_images,ISO_SEG)
 
 for i in range(NUMBER_OF_IMAGES):
+    index = vts_files[i].split('/')[-1].replace('.vts','')
+    plt.figure()
+    plt.imshow(segmented_images[i,:,:,0],cmap='gray')
+    plt.colorbar()
+    plt.savefig(folder+'{}_seg_thresh.png'.format(index),dpi=300)
+    plt.close()
+
+for i in range(NUMBER_OF_IMAGES):
     segmented_images[i,:,:,0] = binary_fill_holes(segmented_images[i,:,:,0])
+
+    segmented_images[i,:,:,0] = binary_erosion(segmented_images[i,:,:,0])
+
+    segmented_images[i,:,:,0] = binary_dilation(segmented_images[i,:,:,0], iterations=2)
+
+for i in range(NUMBER_OF_IMAGES):
+    index = vts_files[i].split('/')[-1].replace('.vts','')
+    plt.figure()
+    plt.imshow(segmented_images[i,:,:,0],cmap='gray')
+    plt.colorbar()
+    plt.savefig(folder+'{}_seg_fill.png'.format(index),dpi=300)
+    plt.close()
 
 #convert segmented images to structured points
 segmented_vts = []
@@ -171,7 +193,8 @@ print "Extracting contours"
 
 contours = [util.marchingSquares(s,iso=ISOVALUE,mode='center',asNumpy=False) for s in segmented_vts]
 contours = [util.VTKPDPointstoNumpy(c)[:,:2] for c in contours]
-print contours[0]
+for c in contours:
+    print c
 contours = [util.reorder_contour(c) for c in contours]
 contours = [util.numpyToPd(c) for c in contours]
 

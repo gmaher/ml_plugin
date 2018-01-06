@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from modules import train_utils
 from modules import layers as tf_util
-from medpy.metric.binary import hd, assd
+#from medpy.metric.binary import hd, assd
 from modules import io
 from modules import vascular_data as sv
 """
