@@ -23,6 +23,33 @@ def window_image(image,center,window):
     x[image > end_] = 1.0
     return x
 
+def smoothContour(c, num_modes=10):
+    if len(c) < 3:
+        return np.array([[0.0,0.0],[0.0,0.0]]).T
+    x = c[:,0]
+    y = c[:,1]
+    mu = np.mean(c,axis=0)
+
+    x = x-mu[0]
+    y = y-mu[1]
+
+    xfft = np.fft.fft(x)
+    yfft = np.fft.fft(y)
+
+    xfft[num_modes:] = 0
+    yfft[num_modes:] = 0
+
+    sx = 2*np.fft.ifft(xfft)+mu[0]
+    sy = 2*np.fft.ifft(yfft)+mu[1]
+
+    return np.array([np.real(sx),np.real(sy)]).T
+
+def crop_center(img,cropx,cropy):
+    y,x = img.shape
+    startx = x//2-(cropx//2)
+    starty = y//2-(cropy//2)
+    return img[starty:starty+cropy,startx:startx+cropx]
+
 def vtk_image_to_numpy(im):
 
     H,W,D = im.GetDimensions()
@@ -33,7 +60,7 @@ def vtk_image_to_numpy(im):
     assert a.shape==im.GetDimensions()
     return a
 
-def normalizeContour(c,p,t,tx):
+def normalizeContour(c,p,t,tx, as_list=False):
     """
     uses simvascular path info to transform contour into local 2d coordinates
 
@@ -52,9 +79,12 @@ def normalizeContour(c,p,t,tx):
     ty = np.cross(t,tx)
     ty = ty/np.linalg.norm(ty)
 
-    c_p = [k-p for k in c]
+    c_p = [np.array(k)-np.array(p) for k in c]
 
-    res = np.array([(k.dot(tx), k.dot(ty)) for k in c_p])
+    if as_list:
+        res = [[k.dot(tx), k.dot(ty)] for k in c_p]
+    else:
+        res = np.array([(k.dot(tx), k.dot(ty)) for k in c_p])
     #print '{}\n{}\n{}\n{}\n{}\n{}\n{}\n'.format(p,t,tx,ty,c,c_p,res)
     return res
 
@@ -285,13 +315,18 @@ def get_segs(path_points, grp_dict, dims, spacing, num_contour_points):
     if np.amax(grp_dict.keys()) >= len(path_points): return None
 
     norm_grps, means = normalize_grps(grp_dict,path_points)
-
+    for i in range(len(norm_grps)):
+        #norm_grps[i][:,0] += spacing[0]
+        norm_grps[i][:,1] -= spacing[1]
     if len(norm_grps) > 3:
 
         interp_grps = reinterp_grps(norm_grps, num_contour_points)
 
         segs = [contourToSeg(c,-means[i],dims,spacing) for i,c in
                  enumerate(norm_grps)]
+
+        # segs = [contourToSeg(c,means[i],dims,spacing) for i,c in
+        #           enumerate(norm_grps)]
 
         return segs,norm_grps,interp_grps,means
 
@@ -355,7 +390,7 @@ def read_mha(img_fn):
     reader.Update()
     return reader.GetOutput()
 
-def getImageReslice(img, ext, p, n, x, asnumpy=False):
+def getImageReslice(img, ext, p, n, x, spacing, asnumpy=False):
     """
     gets slice of an image in the plane defined by p, n and x
 
@@ -382,12 +417,12 @@ def getImageReslice(img, ext, p, n, x, asnumpy=False):
         x[0],x[1],x[2],y[0],y[1],y[2],n[0],n[1],n[2])
     reslice.SetResliceAxesOrigin(p[0],p[1],p[2])
 
-    delta_min = min(img.GetSpacing())
+    #delta_min = min(img.GetSpacing())
     #delta_min = 0.025
-    px = delta_min*ext[0]
-    py = delta_min*ext[1]
+    px = spacing*ext[0]
+    py = spacing*ext[1]
 
-    reslice.SetOutputSpacing((delta_min,delta_min,delta_min))
+    reslice.SetOutputSpacing((spacing,spacing,spacing))
     reslice.SetOutputOrigin(-0.5*px,-0.5*py,0.0)
     reslice.SetOutputExtent(0,ext[0],0,ext[1],0,0)
 
@@ -432,3 +467,102 @@ def VTKSPtoNumpy(vol):
     exporter.Export()
     a = np.reshape(np.fromstring(s,dtype),(dims[2],dims[0],dims[1]))
     return a[0]
+
+def marchingSquares(img, iso=0.0, mode='center'):
+    s = img.shape
+    alg = vtk.vtkMarchingSquares()
+
+    sp = VTKNumpytoSP(img)
+
+    alg.SetInputData(sp)
+    alg.SetValue(0,iso)
+    alg.Update()
+    pds = alg.GetOutput()
+
+    a = vtk.vtkPolyDataConnectivityFilter()
+    a.SetInputData(pds)
+
+    if mode=='center':
+        a.SetExtractionModeToClosestPointRegion()
+        a.SetClosestPoint(float(s[0])/2,float(s[1])/2,0.0)
+
+    elif mode=='all':
+        a.SetExtractionModeToAllRegions()
+
+    a.Update()
+    pds = a.GetOutput()
+
+    if pds.GetPoints() is None:
+        return np.asarray([[0.0,0.0],[0.0,0.0],[0.0,0.0]])
+    else:
+        pds = VTKPDPointstoNumpy(pds)
+        if len(pds) <= 1:
+            return np.asarray([[0.0,0.0],[0.0,0.0],[0.0,0.0]])
+        return pds
+
+def VTKPDPointstoNumpy(pd):
+	'''
+	function to convert the points data of a vtk polydata object to a numpy array
+
+	args:
+		@a pd: vtk.vtkPolyData object
+	'''
+	return numpy_support.vtk_to_numpy(pd.GetPoints().GetData())
+
+def reorder_contour(c):
+    N = len(c)
+    if N <= 2:
+        return c
+    even_inds = np.arange(0,N,2)
+    odd_inds = np.arange(1,N,2)
+
+    even_points = np.asarray([c[i] for i in even_inds])
+    odd_points = np.asarray([c[i] for i in odd_inds])
+
+    N_even = len(even_points)
+    ret = np.zeros_like(c)
+    ret[:N_even] = even_points
+    ret[N_even:] = np.flipud(odd_points)
+    ret = ret[:-2]
+    return ret.copy()
+
+def VTKNumpytoSP(img_):
+    img = img_.T
+
+    H,W = img.shape
+
+    sp = vtk.vtkStructuredPoints()
+    sp.SetDimensions(H,W,1)
+    sp.AllocateScalars(10,1)
+    for i in range(H):
+        for j in range(W):
+            v = img[i,j]
+            sp.SetScalarComponentFromFloat(i,j,0,0,v)
+
+    return sp
+
+from skimage.measure import grid_points_in_poly
+def contourToSeg(contour, origin, dims, spacing):
+    '''
+    Converts an ordered set of points to a segmentation
+    (i.e. fills the inside of the contour), uses the point in polygon method
+
+    args:
+    	@a contour: numpy array, shape = (num points, 2), ordered list of points
+    	forming a closed contour
+    	@a origin: The origin of the image, corresponds to top left corner of image
+    	@a dims: (xdims,ydims) dimensions of the image corresponding to the segmentation
+    	@a spacing: the physical size of each pixel
+    '''
+    #print contour
+    dims_ = (int(dims[0]),int(dims[1]))
+    d = np.asarray([float(dims[0])/2,float(dims[1])/2])
+
+    seg = np.zeros(dims_)
+
+    origin_ = np.asarray([origin[0],origin[1]])
+    spacing_ = np.asarray([spacing[0],spacing[1]])
+    a = grid_points_in_poly(dims_,
+        (contour[:,:2]-origin_)/spacing_+d)
+    seg[a] = 1.0
+    return np.flipud(seg.T)

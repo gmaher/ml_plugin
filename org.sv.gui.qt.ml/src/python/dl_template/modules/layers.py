@@ -175,18 +175,18 @@ def I2INetFC(x, nfilters=32, init='xavier', activation=tf.nn.relu, output_filter
         activation=activation,init=init)
 
     #I2INetFC
-    y_vec = tf.reshape(yclass_, (Nbatch,CROP_DIMS**2))
+    y_vec = tf.reshape(yhat_, (Nbatch,CROP_DIMS**2))
 
     sp = fullyConnected(y_vec,CROP_DIMS,activation, std=init, scope='sp1')
     sp = fullyConnected(y_vec,CROP_DIMS**2,activation, std=init, scope='sp2')
     sp = tf.reshape(sp, (Nbatch,CROP_DIMS,CROP_DIMS,1))
 
     y_sp = conv2D(sp, nfilters=nfilters,
-        activation=activation,init='xavier', scope='sp3')
+        activation=activation,init=init, scope='sp3')
     y_sp_1 = conv2D(y_sp, nfilters=nfilters,
-        activation=activation, init='xavier',scope='sp4')
+        activation=activation, init=init,scope='sp4')
     y_sp_2 = conv2D(y_sp_1, nfilters=nfilters,
-        activation=activation, init='xavier',scope='sp5')
+        activation=activation, init=init,scope='sp5')
 
     yhat = conv2D(y_sp_2, nfilters=1, activation=tf.identity, init=init,scope='sp6')
 

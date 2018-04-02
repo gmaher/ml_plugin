@@ -3,4 +3,5 @@
 *.sh
 /anaconda/
 /org.sv.gui.qt.ml/src/python/anaconda/
+/org.sv.gui.qt.ml/src/python/dl_template/
 *.pyc

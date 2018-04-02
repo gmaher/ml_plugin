@@ -8,6 +8,28 @@ from scipy.ndimage import rotate
 
 EPS = 1e-5
 
+def TP(yhat,y):
+    return np.sum(yhat.astype(int)*y.astype(int))
+def FP(yhat,y):
+    return np.sum(yhat.astype(int)*(1-y.astype(int)))
+def TN(yhat,y):
+    return np.sum((1-yhat.astype(int))*(1-y.astype(int)))
+def FN(yhat,y):
+    return np.sum((1-yhat.astype(int))*y.astype(int))
+def threshold(x,value):
+	'''
+	sets all values below value to 0 and above to 1
+
+	args:
+		@a x: the array to threshold
+		@a value: the cutoff value
+	'''
+	inds = x < value
+	y = np.copy(x)
+	y[x < value] = 0
+	y[x >= value] = 1
+	return y
+        
 def random_crop(image_pair,max_offset,crop_dims):
     """assumes image_pair is a list of 2d arrays with same shape"""
     starts = np.random.randint(max_offset, size=2)*2 - max_offset
@@ -49,12 +71,12 @@ class FileReaderThread(threading.Thread):
                 file_ = np.random.choice(self.file_list)
                 item_ = self.reader_fn(file_)
                 self.q.put(item_)
-                time.sleep(random.random())
+            time.sleep(random.random())
         return
 
 class BatchGetter(object):
-    def __init__(self, preprocessor_fn, batch_processor_fn, num_batch,queue_size,file_list,
-    reader_fn,num_threads=1):
+    def __init__(self, reader_fn, preprocessor_fn, batch_processor_fn,
+     num_batch,queue_size,file_list, num_threads=1):
         self.q                  = Queue.Queue(queue_size)
         self.preprocessor_fn    = preprocessor_fn
         self.batch_processor_fn = batch_processor_fn

@@ -1,15 +1,17 @@
 DATA_DIR: "/media/marsdenlab/Data2/datasets/DeepLofting/files"
 FILE_LIST: "/media/marsdenlab/Data2/datasets/DeepLofting/files/files.txt"
 
-EXPERIMENT_FILE: "experiments.I2INet"
+EXPERIMENT_FILE: "experiments.NNapp"
 
 RESULTS_DIR: "./results/case1"
+LOG_DIR: "./results/case1/log"
 TRAIN_FILE_LIST: "./results/case1/train.txt"
 VAL_FILE_LIST: "./results/case1/val.txt"
 TEST_FILE_LIST: "./results/case1/test.txt"
 
 MODEL_DIR: "./results/case1/model"
 MODEL_NAME: "I2I"
+MODEL_TYPE: "I2INet"
 
 SPACING: 0.035
 DIMS: 192
@@ -21,6 +23,7 @@ NORMALIZE: "LOCAL_NORM"
 ROTATE: true
 RANDOM_CROP: true
 PATH_PERTURB: 5
+CENTER_GT: false
 
 VAL_PATTERNS:
   - OSMSC0110
